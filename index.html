@@ -90,3 +90,477 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+:root {
+    --bg-color: #0f0c29;
+    --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --primary: #8e2de2;
+    --primary-grad: linear-gradient(to right, #8e2de2, #4a00e0);
+    --text-main: #ffffff;
+    --text-muted: #b3b3b3;
+    --own-msg-bg: #4a00e0;
+    --their-msg-bg: rgba(255, 255, 255, 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+body {
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+}
+
+/* App Container */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    max-width: 1600px;
+    background: rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--glass-border);
+    transition: transform 0.3s ease;
+    z-index: 10;
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.user-profile { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.avatar {
+    width: 40px; height: 40px;
+    background: var(--primary-grad);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; text-transform: uppercase;
+}
+
+.actions button {
+    background: transparent; border: none; color: var(--text-main);
+    font-size: 1.2rem; cursor: pointer; padding: 5px;
+    transition: 0.2s;
+}
+.actions button:hover { color: var(--primary); transform: scale(1.1); }
+
+.search-bar {
+    margin: 15px; padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px; display: flex; gap: 10px; align-items: center;
+}
+.search-bar input {
+    background: transparent; border: none; outline: none; color: white; width: 100%;
+}
+
+.chat-list { flex: 1; overflow-y: auto; }
+.chat-item {
+    padding: 15px 20px;
+    display: flex; align-items: center; gap: 15px;
+    cursor: pointer; transition: 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.chat-item:hover { background: rgba(255,255,255,0.05); }
+.chat-item.active { background: rgba(142, 45, 226, 0.1); border-left: 3px solid var(--primary); }
+.chat-info h4 { font-size: 1rem; margin-bottom: 4px; }
+.chat-info p { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+/* Chat Area */
+.chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+
+.empty-state {
+    height: 100%; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.glass-card { padding: 40px; border-radius: 20px; background: var(--glass-bg); border: 1px solid var(--glass-border); }
+.primary-btn {
+    margin-top: 20px; padding: 10px 20px; border: none; border-radius: 8px;
+    background: var(--primary-grad); color: white; font-weight: 600; cursor: pointer;
+    transition: 0.3s;
+}
+.primary-btn:hover { box-shadow: 0 0 15px var(--primary); }
+
+.active-chat { display: flex; flex-direction: column; height: 100%; }
+.chat-header {
+    padding: 15px 20px; display: flex; align-items: center; gap: 15px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.messages-container {
+    flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+}
+.message {
+    max-width: 70%; padding: 10px 15px; border-radius: 15px;
+    font-size: 0.95rem; line-height: 1.4; position: relative;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.message.own {
+    align-self: flex-end;
+    background: var(--own-msg-bg);
+    border-bottom-right-radius: 2px;
+}
+.message.their {
+    align-self: flex-start;
+    background: var(--their-msg-bg);
+    border-bottom-left-radius: 2px;
+}
+.message-meta { display: block; font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right; }
+.message.their .sender-name { font-size: 0.7rem; color: var(--primary); display: block; margin-bottom: 3px; font-weight: bold;}
+
+.input-area {
+    padding: 15px; display: flex; gap: 10px;
+    border-top: 1px solid var(--glass-border);
+}
+.input-area input {
+    flex: 1; background: rgba(0,0,0,0.2); border: none; padding: 12px; border-radius: 25px;
+    color: white; outline: none;
+}
+#send-btn {
+    width: 45px; height: 45px; border-radius: 50%; border: none;
+    background: var(--primary-grad); color: white; font-size: 1.2rem; cursor: pointer;
+}
+
+/* Mobile Responsive */
+.mobile-only { display: none; background: none; border: none; color: white; font-size: 1.5rem; }
+
+@media (max-width: 768px) {
+    .sidebar { width: 100%; position: absolute; height: 100%; }
+    .chat-area { width: 100%; }
+    .sidebar.hidden-mobile { transform: translateX(-100%); }
+    .chat-area.active-mobile { z-index: 20; background: var(--bg-color); }
+    .mobile-only { display: block; }
+}
+
+/* Modals */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+}
+.modal.hidden { display: none; }
+.modal-content { padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+.modal input { width: 100%; padding: 10px; margin: 15px 0; border-radius: 8px; border: none; outline: none; }
+.secondary-btn { background: transparent; border: 1px solid white; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+
+.toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--primary); padding: 10px 20px; border-radius: 25px;
+    font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transition: 0.3s;
+}
+.toast.hidden { opacity: 0; pointer-events: none; transform: translate(-50%, 20px); }
+// Import Firebase SDKs
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { 
+    getAuth, signInAnonymously, onAuthStateChanged, updateProfile 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    getFirestore, collection, addDoc, query, where, onSnapshot, 
+    orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, arrayUnion 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// Your Config
+const firebaseConfig = {
+    apiKey: "AIzaSyAzSWYQzLxYhWQjBvbHTAueqZ3bqq2QC1U",
+    authDomain: "pvt-chats.firebaseapp.com",
+    projectId: "pvt-chats",
+    storageBucket: "pvt-chats.firebasestorage.app",
+    messagingSenderId: "294532444552",
+    appId: "1:294532444552:web:f729c03fd46ea8569f0a3d",
+    measurementId: "G-0530G7T86J"
+};
+
+// Initialize
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// State
+let currentUser = null;
+let currentChatId = null;
+let unsubscribeMessages = null;
+
+// DOM Elements
+const loginModal = document.getElementById('login-modal');
+const usernameInput = document.getElementById('username-input');
+const loginBtn = document.getElementById('login-btn');
+const chatListEl = document.getElementById('chat-list');
+const messagesContainer = document.getElementById('messages-container');
+const messageInput = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+const sidebar = document.getElementById('sidebar');
+const activeChatView = document.getElementById('active-chat');
+const emptyState = document.getElementById('empty-state');
+const groupModal = document.getElementById('group-modal');
+
+// --- 1. Authentication & Invite Logic ---
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+        loginModal.classList.add('hidden');
+        document.getElementById('my-name').textContent = user.displayName || 'Anonymous';
+        document.getElementById('my-avatar').textContent = (user.displayName || 'A')[0];
+        
+        loadChats();
+        checkUrlForInvite();
+    } else {
+        loginModal.classList.remove('hidden');
+    }
+});
+
+loginBtn.addEventListener('click', () => {
+    const name = usernameInput.value.trim();
+    if (!name) return;
+
+    signInAnonymously(auth).then((result) => {
+        updateProfile(result.user, { displayName: name }).then(() => {
+            // Save user to DB so others can find them by ID
+            setDoc(doc(db, "users", result.user.uid), {
+                uid: result.user.uid,
+                displayName: name,
+                photoURL: null
+            }, { merge: true });
+            location.reload(); // Refresh to update UI
+        });
+    });
+});
+
+// --- 2. Invite System (The "Link" Feature) ---
+// Logic: If URL has ?invite=USER_ID, create a chat with that user automatically.
+
+async function checkUrlForInvite() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteUid = urlParams.get('invite');
+
+    if (inviteUid && inviteUid !== currentUser.uid) {
+        // Check if chat already exists
+        const q = query(
+            collection(db, "chats"), 
+            where("participants", "array-contains", currentUser.uid),
+            where("type", "==", "private")
+        );
+        
+        // This is a simplified client-side check. In prod, use a better compound query or Cloud Function.
+        // We will just create a unique ID for private chats: sort(uid1, uid2)
+        const participants = [currentUser.uid, inviteUid].sort();
+        const chatId = participants.join("_");
+
+        const chatRef = doc(db, "chats", chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+            // Fetch invitee name
+            const inviteeSnap = await getDoc(doc(db, "users", inviteUid));
+            const inviteeName = inviteeSnap.exists() ? inviteeSnap.data().displayName : "Unknown";
+
+            await setDoc(chatRef, {
+                type: 'private',
+                participants: participants,
+                participantNames: {
+                    [currentUser.uid]: currentUser.displayName,
+                    [inviteUid]: inviteeName
+                },
+                lastMessage: "Chat created via link",
+                timestamp: serverTimestamp()
+            });
+        }
+        
+        // Clean URL
+        window.history.replaceState({}, document.title, "/");
+        selectChat(chatId, inviteUid); // Open the chat
+    }
+}
+
+// --- 3. Chat List & Realtime Updates ---
+
+function loadChats() {
+    const q = query(
+        collection(db, "chats"), 
+        where("participants", "array-contains", currentUser.uid),
+        orderBy("timestamp", "desc")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        chatListEl.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const chatId = doc.id;
+            
+            // Determine Chat Name
+            let chatName = "Chat";
+            if (data.type === 'group') {
+                chatName = data.groupName;
+            } else {
+                // For private, find the OTHER user's name
+                const otherUid = data.participants.find(uid => uid !== currentUser.uid);
+                chatName = data.participantNames ? data.participantNames[otherUid] : "User";
+            }
+
+            const div = document.createElement('div');
+            div.className = `chat-item ${currentChatId === chatId ? 'active' : ''}`;
+            div.innerHTML = `
+                <div class="avatar">${chatName[0]}</div>
+                <div class="chat-info">
+                    <h4>${chatName}</h4>
+                    <p>${data.lastMessage || 'No messages yet'}</p>
+                </div>
+            `;
+            div.addEventListener('click', () => selectChat(chatId, data));
+            chatListEl.appendChild(div);
+        });
+    });
+}
+
+// --- 4. Messaging Logic ---
+
+function selectChat(chatId, chatData) {
+    currentChatId = chatId;
+    
+    // UI Updates
+    document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+    // Mobile toggle
+    if (window.innerWidth <= 768) {
+        sidebar.classList.add('hidden-mobile');
+    }
+    emptyState.classList.add('hidden');
+    activeChatView.classList.remove('hidden');
+
+    // Set Header Info
+    let headerName = "Chat";
+    if (chatData.type === 'group') headerName = chatData.groupName;
+    else {
+        const otherUid = chatData.participants.find(uid => uid !== currentUser.uid);
+        headerName = chatData.participantNames ? chatData.participantNames[otherUid] : "User";
+    }
+    document.getElementById('current-chat-name').textContent = headerName;
+    document.getElementById('current-chat-status').textContent = chatData.type === 'group' ? 'Group Chat' : 'Private';
+
+    // Load Messages
+    if (unsubscribeMessages) unsubscribeMessages();
+    
+    const q = query(
+        collection(db, "chats", chatId, "messages"),
+        orderBy("timestamp", "asc")
+    );
+
+    unsubscribeMessages = onSnapshot(q, (snapshot) => {
+        messagesContainer.innerHTML = "";
+        snapshot.forEach((doc) => {
+            renderMessage(doc.data());
+        });
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+}
+
+function renderMessage(msg) {
+    const div = document.createElement('div');
+    const isOwn = msg.senderId === currentUser.uid;
+    div.className = `message ${isOwn ? 'own' : 'their'}`;
+    
+    let content = '';
+    if (!isOwn && msg.senderName) content += `<span class="sender-name">${msg.senderName}</span>`;
+    content += `${msg.text} <span class="message-meta">${formatTime(msg.timestamp)}</span>`;
+    
+    div.innerHTML = content;
+    messagesContainer.appendChild(div);
+}
+
+// Send Message
+async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !currentChatId) return;
+    
+    messageInput.value = ""; // Clear immediately for UX
+
+    await addDoc(collection(db, "chats", currentChatId, "messages"), {
+        text: text,
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName,
+        timestamp: serverTimestamp()
+    });
+
+    await updateDoc(doc(db, "chats", currentChatId), {
+        lastMessage: text,
+        timestamp: serverTimestamp()
+    });
+}
+
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+
+// --- 5. Group Chat & Utilities ---
+
+// Create Group Modal
+document.getElementById('create-group-btn').addEventListener('click', () => groupModal.classList.remove('hidden'));
+document.getElementById('close-group-modal').addEventListener('click', () => groupModal.classList.add('hidden'));
+
+document.getElementById('create-group-confirm').addEventListener('click', async () => {
+    const groupName = document.getElementById('group-name-input').value;
+    if (!groupName) return;
+
+    await addDoc(collection(db, "chats"), {
+        type: 'group',
+        groupName: groupName,
+        participants: [currentUser.uid],
+        lastMessage: "Group Created",
+        timestamp: serverTimestamp()
+    });
+    groupModal.classList.add('hidden');
+});
+
+// Copy Invite Link
+window.copyInviteLink = function() {
+    const link = `${window.location.origin}${window.location.pathname}?invite=${currentUser.uid}`;
+    navigator.clipboard.writeText(link);
+    showToast();
+};
+
+document.getElementById('copy-link-btn').addEventListener('click', window.copyInviteLink);
+
+// Mobile Back Button
+document.getElementById('back-btn').addEventListener('click', () => {
+    sidebar.classList.remove('hidden-mobile');
+    activeChatView.classList.add('hidden');
+    currentChatId = null;
+});
+
+// Helpers
+function formatTime(timestamp) {
+    if (!timestamp) return '...';
+    const date = timestamp.toDate();
+    return date.getHours() + ':' + (date.getMinutes()<10?'0':'') + date.getMinutes();
+}
+
+function showToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 2000);
+}
+        
