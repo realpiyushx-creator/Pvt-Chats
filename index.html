@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostChat | Private</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="login-modal" class="modal">
+        <div class="modal-content glass">
+            <h2>Welcome to GhostChat</h2>
+            <p>Enter a display name to start chatting.</p>
+            <input type="text" id="username-input" placeholder="Your Name (e.g. Shadow)" autocomplete="off">
+            <button id="login-btn" class="primary-btn">Enter The Void</button>
+        </div>
+    </div>
+
+    <div id="group-modal" class="modal hidden">
+        <div class="modal-content glass">
+            <h2>Create Group</h2>
+            <input type="text" id="group-name-input" placeholder="Group Name" autocomplete="off">
+            <button id="create-group-confirm" class="primary-btn">Create</button>
+            <button id="close-group-modal" class="secondary-btn">Cancel</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        
+        <aside class="sidebar glass" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile">
+                    <div class="avatar" id="my-avatar"></div>
+                    <span id="my-name">Loading...</span>
+                </div>
+                <div class="actions">
+                    <button id="copy-link-btn" title="Copy My Invite Link"><i class="ri-link"></i></button>
+                    <button id="create-group-btn" title="Create Group"><i class="ri-group-line"></i></button>
+                </div>
+            </div>
+            
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Search chats...">
+            </div>
+
+            <div class="chat-list" id="chat-list">
+                <div class="loading-spinner">Loading chats...</div>
+            </div>
+        </aside>
+
+        <main class="chat-area" id="chat-area">
+            
+            <div id="empty-state" class="empty-state">
+                <div class="glass-card">
+                    <h1>GhostChat</h1>
+                    <p>Select a chat or share your link to start.</p>
+                    <button class="primary-btn" onclick="copyInviteLink()">
+                        <i class="ri-share-forward-line"></i> Copy Invite Link
+                    </button>
+                </div>
+            </div>
+
+            <div id="active-chat" class="active-chat hidden">
+                <header class="chat-header glass">
+                    <button id="back-btn" class="mobile-only"><i class="ri-arrow-left-s-line"></i></button>
+                    <div class="chat-info">
+                        <h3 id="current-chat-name">User</h3>
+                        <span id="current-chat-status" class="status">Private Chat</span>
+                    </div>
+                    <button id="chat-options-btn"><i class="ri-more-2-fill"></i></button>
+                </header>
+
+                <div class="messages-container" id="messages-container">
+                    </div>
+
+                <div class="input-area glass">
+                    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                    <button id="send-btn"><i class="ri-send-plane-fill"></i></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast" class="toast hidden">Link Copied!</div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
