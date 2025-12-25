@@ -1,0 +1,184 @@
+:root {
+    --bg-color: #0f0c29;
+    --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --primary: #8e2de2;
+    --primary-grad: linear-gradient(to right, #8e2de2, #4a00e0);
+    --text-main: #ffffff;
+    --text-muted: #b3b3b3;
+    --own-msg-bg: #4a00e0;
+    --their-msg-bg: rgba(255, 255, 255, 0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+body {
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+}
+
+/* App Container */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    max-width: 1600px;
+    background: rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--glass-border);
+    transition: transform 0.3s ease;
+    z-index: 10;
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.user-profile { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.avatar {
+    width: 40px; height: 40px;
+    background: var(--primary-grad);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; text-transform: uppercase;
+}
+
+.actions button {
+    background: transparent; border: none; color: var(--text-main);
+    font-size: 1.2rem; cursor: pointer; padding: 5px;
+    transition: 0.2s;
+}
+.actions button:hover { color: var(--primary); transform: scale(1.1); }
+
+.search-bar {
+    margin: 15px; padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px; display: flex; gap: 10px; align-items: center;
+}
+.search-bar input {
+    background: transparent; border: none; outline: none; color: white; width: 100%;
+}
+
+.chat-list { flex: 1; overflow-y: auto; }
+.chat-item {
+    padding: 15px 20px;
+    display: flex; align-items: center; gap: 15px;
+    cursor: pointer; transition: 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+}
+.chat-item:hover { background: rgba(255,255,255,0.05); }
+.chat-item.active { background: rgba(142, 45, 226, 0.1); border-left: 3px solid var(--primary); }
+.chat-info h4 { font-size: 1rem; margin-bottom: 4px; }
+.chat-info p { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+/* Chat Area */
+.chat-area { flex: 1; display: flex; flex-direction: column; position: relative; }
+
+.empty-state {
+    height: 100%; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.glass-card { padding: 40px; border-radius: 20px; background: var(--glass-bg); border: 1px solid var(--glass-border); }
+.primary-btn {
+    margin-top: 20px; padding: 10px 20px; border: none; border-radius: 8px;
+    background: var(--primary-grad); color: white; font-weight: 600; cursor: pointer;
+    transition: 0.3s;
+}
+.primary-btn:hover { box-shadow: 0 0 15px var(--primary); }
+
+.active-chat { display: flex; flex-direction: column; height: 100%; }
+.chat-header {
+    padding: 15px 20px; display: flex; align-items: center; gap: 15px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.messages-container {
+    flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+}
+.message {
+    max-width: 70%; padding: 10px 15px; border-radius: 15px;
+    font-size: 0.95rem; line-height: 1.4; position: relative;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.message.own {
+    align-self: flex-end;
+    background: var(--own-msg-bg);
+    border-bottom-right-radius: 2px;
+}
+.message.their {
+    align-self: flex-start;
+    background: var(--their-msg-bg);
+    border-bottom-left-radius: 2px;
+}
+.message-meta { display: block; font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right; }
+.message.their .sender-name { font-size: 0.7rem; color: var(--primary); display: block; margin-bottom: 3px; font-weight: bold;}
+
+.input-area {
+    padding: 15px; display: flex; gap: 10px;
+    border-top: 1px solid var(--glass-border);
+}
+.input-area input {
+    flex: 1; background: rgba(0,0,0,0.2); border: none; padding: 12px; border-radius: 25px;
+    color: white; outline: none;
+}
+#send-btn {
+    width: 45px; height: 45px; border-radius: 50%; border: none;
+    background: var(--primary-grad); color: white; font-size: 1.2rem; cursor: pointer;
+}
+
+/* Mobile Responsive */
+.mobile-only { display: none; background: none; border: none; color: white; font-size: 1.5rem; }
+
+@media (max-width: 768px) {
+    .sidebar { width: 100%; position: absolute; height: 100%; }
+    .chat-area { width: 100%; }
+    .sidebar.hidden-mobile { transform: translateX(-100%); }
+    .chat-area.active-mobile { z-index: 20; background: var(--bg-color); }
+    .mobile-only { display: block; }
+}
+
+/* Modals */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+}
+.modal.hidden { display: none; }
+.modal-content { padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+.modal input { width: 100%; padding: 10px; margin: 15px 0; border-radius: 8px; border: none; outline: none; }
+.secondary-btn { background: transparent; border: 1px solid white; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-left: 10px; }
+
+.toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--primary); padding: 10px 20px; border-radius: 25px;
+    font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transition: 0.3s;
+}
+.toast.hidden { opacity: 0; pointer-events: none; transform: translate(-50%, 20px); }
+  
