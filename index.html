@@ -1,265 +1,400 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PrivChat - Realtime</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { background: '#0f172a', surface: '#1e293b', primary: '#6366f1', accent: '#8b5cf6' } } }
-        }
-    </script>
-    <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; overflow: hidden; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>PrivChat Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #111b21;
+      --bg-panel: #202c33;
+      --header: #202c33;
+      --primary: #00a884;
+      --incoming: #202c33;
+      --outgoing: #005c4b;
+      --text-main: #e9edef;
+      --text-sec: #8696a0;
+    }
+    
+    /* FIX: Mobile Viewport Height (dvh) */
+    html, body { 
+        height: 100dvh; 
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg-dark); 
+        color: var(--text-main); 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden;
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    #root { height: 100%; width: 100%; }
+
+    /* Background Pattern */
+    .wa-bg {
+      background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+      opacity: 0.06;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+    
+    /* Animations */
+    .animate-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
-        <script type="text/babel" data-type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getAuth, GoogleAuthProvider, signInWithPopup, signInWithPhoneNumber, 
-            RecaptchaVerifier, signOut, onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { 
-            getFirestore, collection, addDoc, query, where, onSnapshot, 
-            orderBy, setDoc, doc, getDocs, updateDoc, serverTimestamp, arrayUnion 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <div id="root"></div>
 
-        // --- PASTE YOUR FIREBASE CONFIG HERE ---
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // --- CONFIG ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzSWYQzLxYhWQjBvbHTAueqZ3bqq2QC1U",
+      authDomain: "pvt-chats.firebaseapp.com",
+      projectId: "pvt-chats",
+      storageBucket: "pvt-chats.firebasestorage.app",
+      messagingSenderId: "294532444552",
+      appId: "1:294532444552:web:f729c03fd46ea8569f0a3d",
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+	    // --- ICONS ---
+    const Icons = {
+        Back: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>,
+        Menu: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>,
+        Plus: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>,
+        Send: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 translate-x-0.5"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>,
+        Link: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>,
+        Camera: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    };
+
+    // --- SIDEBAR COMPONENT ---
+    function Sidebar({ user, activeRoom, onSelectRoom }) {
+        const [rooms, setRooms] = useState([]);
+        const [showNew, setShowNew] = useState(false);
+        const [showMenu, setShowMenu] = useState(false);
+        const [newRoomName, setNewRoomName] = useState('');
+
+        useEffect(() => {
+            const q = query(collection(db, 'users', user.uid, 'chats'), orderBy('lastUpdated', 'desc'));
+            return onSnapshot(q, (snapshot) => {
+                setRooms(snapshot.docs.map(d => ({id: d.id, ...d.data()})));
+            });
+        }, [user]);
+
+        const createRoom = async (e) => {
+            e.preventDefault();
+            if(!newRoomName.trim()) return;
+            const roomId = Math.random().toString(36).substring(2, 8);
+            
+            await setDoc(doc(db, 'users', user.uid, 'chats', roomId), {
+                name: newRoomName,
+                lastMessage: 'Tap to invite friends',
+                lastUpdated: serverTimestamp(),
+                roomId: roomId
+            });
+            
+            setNewRoomName('');
+            setShowNew(false);
+            onSelectRoom({ id: roomId, name: newRoomName });
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        const { useState, useEffect, useRef } = React;
-        const { MessageSquare, LogIn, Phone, LogOut, Send, Copy, Plus, UserPlus } = lucide;
-
-        function App() {
-            const [user, setUser] = useState(null);
-            const [activeChat, setActiveChat] = useState(null);
-            const [chats, setChats] = useState([]);
-            const [messages, setMessages] = useState([]);
-            const [newMessage, setNewMessage] = useState("");
-            const [inviteLink, setInviteLink] = useState("");
-            
-            // Login & Initial Setup
-            useEffect(() => {
-                const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-                    if (currentUser) {
-                        setUser(currentUser);
-                        // Save user to DB
-                        await setDoc(doc(db, "users", currentUser.uid), {
-                            uid: currentUser.uid,
-                            name: currentUser.displayName || currentUser.phoneNumber,
-                            photo: currentUser.photoURL,
-                            email: currentUser.email
-                        }, { merge: true });
-
-                        // Check for Invite Link in URL
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const inviteId = urlParams.get('invite');
-                        if (inviteId && inviteId !== currentUser.uid) {
-                            handleInvite(currentUser.uid, inviteId);
-                        }
-                    } else {
-                        setUser(null);
-                        setChats([]);
-                        setActiveChat(null);
-                    }
-                });
-                return () => unsubscribe();
-            }, []);
-
-            // Handle Invites (Create Chat)
-            const handleInvite = async (myUid, friendUid) => {
-                // Check if chat already exists
-                const q = query(collection(db, "chats"), where("participants", "array-contains", myUid));
-                const snapshot = await getDocs(q);
-                let chatExists = false;
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.participants.includes(friendUid)) {
-                        chatExists = true;
-                        setActiveChat({ id: doc.id, ...data });
-                    }
-                });
-
-                if (!chatExists) {
-                    const newChat = await addDoc(collection(db, "chats"), {
-                        participants: [myUid, friendUid],
-                        createdAt: serverTimestamp(),
-                        lastMessage: "Chat started"
-                    });
-                    // Clear URL
-                    window.history.replaceState({}, document.title, "/");
-                    alert("Friend added! You can now chat.");
-                }
-            };
-
-            // Load Chat List
-            useEffect(() => {
-                if (!user) return;
-                const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid), orderBy("createdAt", "desc"));
-                const unsub = onSnapshot(q, (snapshot) => {
-                    const chatList = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        // Helper to find friend's ID
-                        friendId: doc.data().participants.find(id => id !== user.uid)
-                    }));
-                    setChats(chatList);
-                });
-                return () => unsub();
-            }, [user]);
-
-            // Load Messages for Active Chat
-            useEffect(() => {
-                if (!activeChat) return;
-                const q = query(collection(db, "chats", activeChat.id, "messages"), orderBy("createdAt", "asc"));
-                const unsub = onSnapshot(q, (snapshot) => {
-                    setMessages(snapshot.docs.map(doc => doc.data()));
-                });
-                return () => unsub();
-            }, [activeChat]);
-
-            const sendMessage = async (e) => {
-                e.preventDefault();
-                if (!newMessage.trim() || !activeChat) return;
-
-                await addDoc(collection(db, "chats", activeChat.id, "messages"), {
-                    text: newMessage,
-                    senderId: user.uid,
-                    createdAt: serverTimestamp()
-                });
-
-                await updateDoc(doc(db, "chats", activeChat.id), {
-                    lastMessage: newMessage,
-                    lastMessageTime: serverTimestamp()
-                });
-                setNewMessage("");
-            };
-
-            const copyInvite = () => {
-                const link = `${window.location.origin}?invite=${user.uid}`;
-                navigator.clipboard.writeText(link);
-                alert("Invite link copied! Send it to your friend.");
-            };
-
-            const handleGoogleLogin = async () => {
-                try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
-                catch (e) { console.error(e); }
-            };
-                        return (
-                <div className="h-screen w-screen flex bg-background text-white overflow-hidden">
-                    
-                    {/* LEFT SIDEBAR (Chat List) */}
-                    <div className={`${activeChat ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col border-r border-white/10 bg-surface/50`}>
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                            <h1 className="font-bold text-xl">PrivChat</h1>
-                            {user && (
-                                <button onClick={() => signOut(auth)} title="Logout">
-                                    <i data-lucide="log-out" class="w-5 h-5 text-red-400"></i>
-                                </button>
+        return (
+            <div className={`flex flex-col h-full bg-[#111b21] border-r border-[#2f3b43] ${activeRoom ? 'hidden md:flex' : 'flex'} w-full md:w-[30%] relative`}>
+                <div className="bg-[#202c33] p-3 flex justify-between items-center relative z-20 h-[60px] shrink-0">
+                    <img src={user.photoURL} className="w-10 h-10 rounded-full cursor-pointer hover:opacity-80" />
+                    <div className="flex gap-4 text-[#aebac1]">
+                        <button onClick={() => setShowNew(!showNew)} title="New Chat"><Icons.Plus /></button>
+                        <div className="relative">
+                            <button onClick={() => setShowMenu(!showMenu)}><Icons.Menu /></button>
+                            {showMenu && (
+                                <div className="absolute right-0 top-10 bg-[#233138] py-2 w-40 rounded-lg shadow-xl border border-[#2f3b43] flex flex-col z-50">
+                                    <button onClick={() => { setShowMenu(false); signOut(auth); }} className="text-left px-4 py-3 text-[#e9edef] hover:bg-[#111b21] text-sm">Log out</button>
+                                    <button onClick={() => setShowMenu(false)} className="text-left px-4 py-3 text-[#e9edef] hover:bg-[#111b21] text-sm">Close</button>
+                                </div>
                             )}
                         </div>
+                    </div>
+                </div>
 
-                        {!user ? (
-                            <div className="flex-1 flex flex-col justify-center p-6 gap-4">
-                                <p className="text-center text-white/60 mb-4">Login to view chats</p>
-                                <button onClick={handleGoogleLogin} className="p-3 bg-white/10 rounded-xl flex items-center gap-3 hover:bg-white/20">
-                                    <i data-lucide="log-in" class="w-5 h-5"></i> Google Login
-                                </button>
+                {showNew && (
+                    <form onSubmit={createRoom} className="p-2 bg-[#202c33] border-b border-[#2f3b43]">
+                        <input autoFocus placeholder="Room Name..." className="w-full bg-[#2a3942] text-white p-2 rounded-lg text-sm outline-none" value={newRoomName} onChange={e => setNewRoomName(e.target.value)} />
+                    </form>
+                )}
+
+                <div className="flex-1 overflow-y-auto z-10">
+                    {rooms.map(room => (
+                        <div key={room.id} onClick={() => onSelectRoom(room)} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-[#202c33] border-b border-[#2f3b43] transition-colors">
+                            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-xl text-white font-bold shrink-0">{room.name[0]?.toUpperCase()}</div>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex justify-between">
+                                    <h3 className="text-[#e9edef] font-medium truncate">{room.name}</h3>
+                                    <span className="text-xs text-[#8696a0]">{room.lastUpdated?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                                </div>
+                                <p className="text-sm text-[#8696a0] truncate">{room.lastMessage}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+	    // --- MEMOIZED MESSAGE BUBBLE (Supports Images) ---
+    const MessageBubble = React.memo(({ m, isMe, showDate, dateLabel, getNameColor }) => {
+        return (
+            <React.Fragment>
+                {showDate && (
+                    <div className="flex justify-center my-4 sticky top-2 z-10 opacity-90">
+                        <span className="bg-[#1f2c33] text-[#8696a0] text-[10px] font-bold px-3 py-1 rounded-lg shadow-sm border border-[#233138] uppercase tracking-wide">{dateLabel}</span>
+                    </div>
+                )}
+                <div className={`flex mb-1 ${isMe ? 'justify-end' : 'justify-start'} group animate-in`}>
+                    {!isMe && <img src={m.photo} className="w-7 h-7 rounded-full mr-2 self-start mt-0.5 border border-[#2f3b43]" />}
+                    <div className={`relative max-w-[80%] md:max-w-[60%] rounded-lg p-1.5 px-3 text-sm shadow-sm ${isMe ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-none' : 'bg-[#202c33] text-[#e9edef] rounded-tl-none'}`}>
+                        {!isMe && <p className="text-xs font-bold mb-0.5 leading-none" style={{ color: getNameColor(m.uid) }}>{m.name}</p>}
+                        
+                        {/* Render Image if exists */}
+                        {m.image ? (
+                            <div className="mb-1">
+                                <img src={m.image} className="rounded-lg w-full object-cover max-h-[300px]" alt="Shared media" />
                             </div>
                         ) : (
-                            <div className="flex-1 overflow-y-auto">
-                                <button onClick={copyInvite} className="w-full p-4 text-left border-b border-white/5 hover:bg-white/5 flex items-center gap-3 text-primary">
-                                    <div className="bg-primary/20 p-2 rounded-full"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
-                                    <div>
-                                        <p className="font-bold text-sm">Invite Friend</p>
-                                        <p className="text-xs text-white/50">Click to copy link</p>
-                                    </div>
-                                </button>
-
-                                {chats.map(chat => (
-                                    <div key={chat.id} onClick={() => setActiveChat(chat)} 
-                                         className={`p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 ${activeChat?.id === chat.id ? 'bg-white/10' : ''}`}>
-                                        <p className="font-medium text-sm">Friend (ID: {chat.friendId.slice(0,5)}...)</p>
-                                        <p className="text-xs text-white/40 truncate">{chat.lastMessage}</p>
-                                    </div>
-                                ))}
-                            </div>
+                            <p className="leading-relaxed whitespace-pre-wrap break-words pb-1 text-[15px]">{m.text}</p>
                         )}
+
+                        <div className="flex justify-end items-center gap-1 opacity-60"><span className="text-[10px]">{m.createdAt?.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+                        {isMe ? <svg className="absolute top-0 -right-2 w-2 h-3 text-[#005c4b] fill-current" viewBox="0 0 8 13"><path d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"/></svg>
+                              : <svg className="absolute top-0 -left-2 w-2 h-3 text-[#202c33] fill-current" viewBox="0 0 8 13"><path d="M-2.188 1H3v11.193l-6.467-8.625C-4.526 2.156 -3.958 1 -2.188 1z" transform="scale(-1,1)"/></svg>}
                     </div>
+                </div>
+            </React.Fragment>
+        );
+    });
 
-                    {/* RIGHT AREA (Chat Room) */}
-                    <div className={`${!activeChat ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-black/20 relative`}>
-                        {!activeChat ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-white/30">
-                                <i data-lucide="message-square" class="w-16 h-16 mb-4"></i>
-                                <p>Select a chat or invite a friend</p>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Chat Header */}
-                                <div className="p-4 bg-surface/50 border-b border-white/10 flex items-center gap-3">
-                                    <button onClick={() => setActiveChat(null)} className="md:hidden text-white/60">
-                                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
-                                    </button>
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent"></div>
-                                    <div>
-                                        <p className="font-bold">Chat Room</p>
-                                        <p className="text-xs text-green-400">Encrypted</p>
-                                    </div>
-                                </div>
+    // --- CHAT WINDOW ---
+    function ChatWindow({ user, room, onBack }) {
+        const dummy = useRef();
+        const fileInputRef = useRef();
+        const lastTypingTimeRef = useRef(0);
+        const [messages, setMessages] = useState([]);
+        const [typingUsers, setTypingUsers] = useState([]);
+        const [val, setVal] = useState('');
+        const [sending, setSending] = useState(false);
 
-                                {/* Messages Feed */}
-                                <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse">
-                                    <div className="flex flex-col gap-2">
-                                        {messages.map((msg, idx) => (
-                                            <div key={idx} className={`max-w-[75%] p-3 rounded-2xl text-sm ${msg.senderId === user.uid ? 'bg-primary self-end rounded-tr-none' : 'bg-surface self-start rounded-tl-none'}`}>
-                                                {msg.text}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+        const getNameColor = (str) => {
+            const colors = ['#ff5c5c', '#34b7f1', '#a6c638', '#d76fdb', '#f7931e', '#55efc4'];
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        };
 
-                                {/* Input Area */}
-                                <form onSubmit={sendMessage} className="p-4 bg-surface/30 border-t border-white/10 flex gap-2">
-                                    <input 
-                                        value={newMessage}
-                                        onChange={e => setNewMessage(e.target.value)}
-                                        placeholder="Type a message..."
-                                        className="flex-1 bg-black/40 border border-white/10 rounded-full px-4 py-2 outline-none focus:border-primary"
-                                    />
-                                    <button type="submit" className="p-3 bg-primary rounded-full hover:bg-primary/80">
-                                        <i data-lucide="send" class="w-5 h-5"></i>
-                                    </button>
-                                </form>
-                            </>
-                        )}
+        const getDateLabel = (date) => {
+            if (!date) return null;
+            const today = new Date();
+            const d = date.toDate();
+            if (d.toDateString() === today.toDateString()) return "TODAY";
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (d.toDateString() === yesterday.toDateString()) return "YESTERDAY";
+            return d.toLocaleDateString();
+        };
+
+        useEffect(() => {
+            if(!room) return;
+            const msgQ = query(collection(db, 'rooms', room.id, 'messages'), orderBy('createdAt'), limit(100));
+            const unsubMsg = onSnapshot(msgQ, snap => {
+                setMessages(snap.docs.map(d => d.data()));
+                setTimeout(() => dummy.current?.scrollIntoView(), 100);
+            });
+            const typingQ = query(collection(db, 'rooms', room.id, 'typing'));
+            const unsubTyping = onSnapshot(typingQ, snap => {
+                const now = Date.now();
+                setTypingUsers(snap.docs.map(d => d.data()).filter(d => d.uid !== user.uid && (now - d.lastTyped < 5000)).map(d => d.name));
+            });
+            return () => { unsubMsg(); unsubTyping(); };
+        }, [room]);
+
+        const handleInput = (e) => {
+            setVal(e.target.value);
+            const now = Date.now();
+            if (now - lastTypingTimeRef.current > 2000) {
+                lastTypingTimeRef.current = now;
+                setDoc(doc(db, 'rooms', room.id, 'typing', user.uid), { name: user.displayName.split(' ')[0], uid: user.uid, lastTyped: now }, { merge: true });
+            }
+        };
+
+        const handleImageSelect = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Compress Image Logic (Client-side)
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; 
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60%
+                    
+                    // Send immediately
+                    sendMessage(null, compressedBase64);
+                };
+            };
+        };
+
+        const sendMessage = async (e, imageBase64 = null) => {
+            if (e) e.preventDefault();
+            if (!val.trim() && !imageBase64 && !sending) return;
+            
+            setSending(true);
+            const text = val;
+            setVal(''); 
+            
+            deleteDoc(doc(db, 'rooms', room.id, 'typing', user.uid));
+            
+            const messageData = { 
+                text: imageBase64 ? '? Photo' : text,
+                image: imageBase64, // Store base64 string
+                uid: user.uid, 
+                photo: user.photoURL, 
+                name: user.displayName.split(' ')[0], 
+                createdAt: serverTimestamp() 
+            };
+
+            await addDoc(collection(db, 'rooms', room.id, 'messages'), messageData);
+            await setDoc(doc(db, 'users', user.uid, 'chats', room.id), { lastMessage: imageBase64 ? '? Photo' : text, lastUpdated: serverTimestamp() }, { merge: true });
+            
+            setSending(false);
+            dummy.current?.scrollIntoView({behavior:'smooth'});
+        };
+
+        const copyLink = () => {
+             const url = window.location.origin + "?invite=" + room.id + "&name=" + encodeURIComponent(room.name);
+             navigator.clipboard.writeText(url);
+             alert("? Invite Link Copied!");
+        };
+
+        if (!room) return (
+            <div className="hidden md:flex flex-col items-center justify-center w-[70%] bg-[#222e35] text-[#e9edef] border-b-[6px] border-[#00a884]">
+                <h1 className="text-3xl font-light mb-4">PrivChat Web</h1>
+                <p className="text-[#8696a0] text-sm">Select a chat to start messaging.</p>
+            </div>
+        );
+
+        let headerStatus = typingUsers.length > 0 ? (typingUsers.length === 1 ? `${typingUsers[0]} is typing...` : `${typingUsers.join(', ')} are typing...`) : "Tap invite to add friends";
+
+        return (
+            <div className={`flex flex-col h-full bg-[#0b141a] w-full md:w-[70%] absolute md:relative z-10 ${!room ? 'translate-x-full' : 'translate-x-0'} transition-transform duration-300 md:transform-none`}>
+                <div className="bg-[#202c33] p-2 px-4 flex items-center justify-between shadow-sm z-20 h-[60px] shrink-0">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <button onClick={onBack} className="md:hidden text-[#d1d7db]"><Icons.Back /></button>
+                        <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">{room.name.substring(0,2).toUpperCase()}</div>
+                        <div className="flex flex-col justify-center min-w-0">
+                            <h2 className="text-[#e9edef] font-medium leading-tight truncate pr-2">{room.name}</h2>
+                            <p className={`text-[11px] leading-tight mt-0.5 truncate font-medium ${typingUsers.length > 0 ? 'text-[#00a884] animate-pulse' : 'text-[#8696a0]'}`}>{headerStatus}</p>
+                        </div>
                     </div>
+                    <button onClick={copyLink} className="p-2 text-[#00a884] bg-[#2a3942]/50 rounded-full hover:bg-[#32424c] transition flex items-center gap-2 px-4 border border-[#2f3b43]"><Icons.Link /><span className="text-[10px] font-bold tracking-wider hidden sm:block">INVITE</span></button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+                    <div className="absolute inset-0 wa-bg pointer-events-none"></div>
+                    {messages.map((m, i) => {
+                        const dateLabel = getDateLabel(m.createdAt);
+                        const prevDateLabel = i > 0 ? getDateLabel(messages[i-1].createdAt) : null;
+                        return <MessageBubble key={i} m={m} isMe={m.uid === user.uid} showDate={dateLabel !== prevDateLabel} dateLabel={dateLabel} getNameColor={getNameColor} />;
+                    })}
+                    <div ref={dummy} className="h-4"></div>
+                </div>
+
+                <div className="bg-[#202c33] px-4 py-2 flex items-center gap-2 z-20 min-h-[62px] shrink-0">
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
+                    <button onClick={() => fileInputRef.current.click()} className="p-2 text-[#8696a0] hover:text-[#aebac1] transition-colors"><Icons.Camera /></button>
+                    
+                    <form onSubmit={(e) => sendMessage(e, null)} className="flex-1 flex gap-3 items-end mb-1">
+                        <div className="flex-1 bg-[#2a3942] rounded-lg px-4 py-2.5 flex items-center border border-transparent focus-within:border-[#2f3b43] transition-colors">
+                            <input value={val} onChange={handleInput} className="w-full bg-transparent text-[#e9edef] outline-none placeholder-[#8696a0] text-[15px]" placeholder="Type a message" autoComplete="off" />
+                        </div>
+                        <button type="submit" disabled={!val} className="p-3 bg-[#00a884] rounded-full text-white disabled:opacity-50 disabled:bg-[#2a3942] transition-all shadow-md active:scale-95"><Icons.Send /></button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+	    // --- MAIN APP ---
+    function App() {
+        const [user, setUser] = useState(null);
+        const [activeRoom, setActiveRoom] = useState(null);
+
+        useEffect(() => {
+            const params = new URLSearchParams(window.location.search);
+            const inviteId = params.get("invite");
+            const inviteName = params.get("name");
+
+            const unsub = onAuthStateChanged(auth, async (u) => {
+                if (u) {
+                    setUser(u);
+                    if(inviteId && inviteName) {
+                        await setDoc(doc(db, 'users', u.uid, 'chats', inviteId), {
+                            name: inviteName,
+                            lastMessage: 'I joined via invite link',
+                            roomId: inviteId,
+                            lastUpdated: serverTimestamp()
+                        }, { merge: true });
+                        setActiveRoom({ id: inviteId, name: inviteName });
+                        window.history.pushState({}, '', '/');
+                    }
+                }
+            });
+            return unsub;
+        }, []);
+
+        const login = () => signInWithPopup(auth, new GoogleAuthProvider());
+
+        if (!user) {
+            return (
+                <div className="h-full flex flex-col items-center justify-center bg-[#111b21] p-4 text-center">
+                    <div className="w-20 h-20 bg-[#00a884] rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(0,168,132,0.4)]">
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10 text-white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    </div>
+                    <h1 className="text-2xl text-[#e9edef] font-light mb-8">PrivChat <strong className="font-bold text-[#00a884]">Pro</strong></h1>
+                    <button onClick={login} className="px-8 py-3 bg-[#00a884] text-[#111b21] font-bold rounded-full hover:bg-[#008f6f] transition-colors">Sign in with Google</button>
+                    <p className="mt-8 text-xs text-[#8696a0]">End-to-end encryption compatible</p>
                 </div>
             );
         }
-                    const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-        setTimeout(() => lucide.createIcons(), 500); // Small delay to ensure icons load
-    </script>
+
+        return (
+            <div className="h-full w-full flex overflow-hidden relative">
+                <Sidebar user={user} activeRoom={activeRoom} onSelectRoom={setActiveRoom} />
+                <ChatWindow user={user} room={activeRoom} onBack={() => setActiveRoom(null)} />
+            </div>
+        );
+    }
+
+    const root = createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
 </body>
 </html>
