@@ -2,553 +2,264 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GhostChat</title>
-    <!-- Remix Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivChat - Realtime</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { background: '#0f172a', surface: '#1e293b', primary: '#6366f1', accent: '#8b5cf6' } } }
+        }
+    </script>
     <style>
-        /* --- CSS STYLES --- */
-        :root {
-            --bg-dark: #050505;
-            --bg-panel: #121212;
-            --primary: #bb86fc;
-            --primary-variant: #3700b3;
-            --accent: #03dac6;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --border: #2a2a2a;
-            --msg-own: #3d2c5e;
-            --msg-their: #1f1f1f;
-            --danger: #cf6679;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Layout */
-        #app {
-            display: flex;
-            width: 100%;
-            max-width: 1400px;
-            height: 100%;
-            background: var(--bg-dark);
-            position: relative;
-        }
-
-        /* Sidebar */
-        aside {
-            width: 350px;
-            background: var(--bg-panel);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-        }
-
-        .header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--accent); }
-        .user-mini { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-muted); }
-
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .chat-item {
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .chat-item:active { background: rgba(255,255,255,0.05); }
-        .chat-item.active { background: rgba(187, 134, 252, 0.08); border-left: 3px solid var(--primary); }
-
-        .avatar {
-            width: 45px; height: 45px;
-            background: linear-gradient(135deg, #333, #111);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 600; color: white;
-            border: 1px solid var(--border);
-        }
-
-        .info h4 { font-size: 1rem; color: var(--text-main); margin-bottom: 3px; }
-        .info p { font-size: 0.85rem; color: var(--text-muted); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-
-        /* Main Chat Area */
-        main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-dark);
-            position: relative;
-        }
-
-        .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            background: rgba(18, 18, 18, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 5;
-        }
-        
-        .back-btn { display: none; margin-right: 15px; background: none; border: none; color: white; font-size: 1.5rem; }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .msg {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            position: relative;
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .msg.own {
-            align-self: flex-end;
-            background: var(--msg-own);
-            color: #fff;
-            border-bottom-right-radius: 4px;
-        }
-
-        .msg.their {
-            align-self: flex-start;
-            background: var(--msg-their);
-            color: #ddd;
-            border-bottom-left-radius: 4px;
-            border: 1px solid var(--border);
-        }
-
-        .msg-sender { font-size: 0.7rem; color: var(--primary); margin-bottom: 4px; display: block; }
-        .msg-time { font-size: 0.65rem; color: rgba(255,255,255,0.4); text-align: right; margin-top: 5px; }
-
-        .input-area {
-            padding: 15px;
-            background: var(--bg-panel);
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            background: #000;
-            border: 1px solid var(--border);
-            padding: 14px;
-            border-radius: 25px;
-            color: white;
-            outline: none;
-            font-size: 1rem;
-        }
-        input[type="text"]:focus { border-color: var(--primary); }
-
-        .send-btn {
-            width: 50px; height: 50px;
-            background: var(--primary);
-            color: #000;
-            border: none;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform 0.2s;
-        }
-        .send-btn:active { transform: scale(0.9); }
-
-        /* Modals & Overlays */
-        .overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(5px);
-            z-index: 100;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .hidden { display: none !important; }
-
-        .card {
-            background: var(--bg-panel);
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .btn {
-            background: var(--primary); color: #000; font-weight: 600;
-            padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer;
-            width: 100%; margin-top: 15px;
-        }
-
-        /* Utils */
-        .fab {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 50px; height: 50px; border-radius: 50%;
-            background: var(--accent); color: #000;
-            border: none; font-size: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            cursor: pointer; z-index: 20;
-            display: flex; align-items: center; justify-content: center;
-        }
-        
-        #error-box {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: var(--danger); color: white;
-            padding: 10px; text-align: center; font-size: 0.8rem;
-            z-index: 200; display: none;
-        }
-
-        /* Responsive Mobile */
-        @media (max-width: 768px) {
-            aside { width: 100%; position: absolute; height: 100%; }
-            main { width: 100%; z-index: 20; transform: translateX(100%); transition: transform 0.3s ease; }
-            main.active { transform: translateX(0); }
-            .back-btn { display: block; }
-            .chat-list { padding-bottom: 80px; } /* Space for FAB */
-        }
+        body { background-color: #0f172a; color: white; font-family: sans-serif; overflow: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
+    <div id="root"></div>
+        <script type="text/babel" data-type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getAuth, GoogleAuthProvider, signInWithPopup, signInWithPhoneNumber, 
+            RecaptchaVerifier, signOut, onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { 
+            getFirestore, collection, addDoc, query, where, onSnapshot, 
+            orderBy, setDoc, doc, getDocs, updateDoc, serverTimestamp, arrayUnion 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    <!-- Error Logger -->
-    <div id="error-box"></div>
-
-    <!-- Auth Modal -->
-    <div id="auth-modal" class="overlay">
-        <div class="card">
-            <h2 style="margin-bottom: 10px;">GhostChat</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px;">Secure, Private, Anonymous.</p>
-            <input type="text" id="username-in" placeholder="Enter Display Name" autocomplete="off">
-            <button class="btn" id="login-btn">Start Chatting</button>
-        </div>
-    </div>
-
-    <!-- Create Group Modal -->
-    <div id="group-modal" class="overlay hidden">
-        <div class="card">
-            <h3>New Group</h3>
-            <input type="text" id="group-name-in" placeholder="Group Name" style="margin-top: 15px;">
-            <button class="btn" id="create-group-btn">Create</button>
-            <button class="btn" style="background: transparent; color: #fff; border: 1px solid var(--border);" onclick="document.getElementById('group-modal').classList.add('hidden')">Cancel</button>
-        </div>
-    </div>
-
-    <div id="app">
-        <!-- Sidebar -->
-        <aside id="sidebar">
-            <div class="header">
-                <div class="logo">GhostChat</div>
-                <div class="user-mini">
-                    <span id="my-name">...</span>
-                    <button onclick="copyMyLink()" style="background:none; border:none; color:var(--accent); cursor:pointer;" title="Copy Invite Link">
-                        <i class="ri-link"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="chat-list" id="chat-list">
-                <!-- Chats will load here -->
-            </div>
-            <!-- FAB to create group -->
-            <button class="fab" onclick="document.getElementById('group-modal').classList.remove('hidden')">
-                <i class="ri-add-line"></i>
-            </button>
-        </aside>
-
-        <!-- Chat Area -->
-        <main id="chat-view">
-            <div class="chat-header">
-                <button class="back-btn" onclick="closeChat()"><i class="ri-arrow-left-s-line"></i></button>
-                <div class="info">
-                    <h4 id="active-chat-title">Select a Chat</h4>
-                    <p id="active-chat-status">Private</p>
-                </div>
-            </div>
-
-            <div class="messages" id="messages">
-                <!-- Messages -->
-            </div>
-
-            <div class="input-area">
-                <input type="text" id="msg-input" placeholder="Type a message...">
-                <button class="send-btn" id="send-btn"><i class="ri-send-plane-fill"></i></button>
-            </div>
-        </main>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, setDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // Error Handling
-        window.onerror = function(msg, url, line) {
-            const errBox = document.getElementById('error-box');
-            errBox.style.display = 'block';
-            errBox.innerText = `Error: ${msg}`;
-            return false;
-        };
-
-        // Configuration
+        // --- PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAzSWYQzLxYhWQjBvbHTAueqZ3bqq2QC1U",
-            authDomain: "pvt-chats.firebaseapp.com",
-            projectId: "pvt-chats",
-            storageBucket: "pvt-chats.firebasestorage.app",
-            messagingSenderId: "294532444552",
-            appId: "1:294532444552:web:f729c03fd46ea8569f0a3d",
-            measurementId: "G-0530G7T86J"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        // Init Firebase
-        let app, auth, db;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        } catch (e) {
-            alert("Firebase Init Failed. Check Console.");
-        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const { useState, useEffect, useRef } = React;
+        const { MessageSquare, LogIn, Phone, LogOut, Send, Copy, Plus, UserPlus } = lucide;
 
-        // State
-        let currentUser = null;
-        let currentChatId = null;
-        let msgUnsub = null;
-
-        // --- AUTH ---
-        const authModal = document.getElementById('auth-modal');
-        const loginBtn = document.getElementById('login-btn');
-        const usernameIn = document.getElementById('username-in');
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                authModal.classList.add('hidden');
-                document.getElementById('my-name').innerText = user.displayName || 'Anon';
-                initApp();
-            } else {
-                authModal.classList.remove('hidden');
-            }
-        });
-
-        loginBtn.addEventListener('click', () => {
-            const name = usernameIn.value.trim();
-            if(!name) return;
-            loginBtn.innerText = "Entering...";
-            signInAnonymously(auth).then(res => {
-                updateProfile(res.user, { displayName: name }).then(() => {
-                    // Store user in DB for searching/naming
-                    setDoc(doc(db, "users", res.user.uid), {
-                        uid: res.user.uid,
-                        name: name
-                    }, { merge: true });
-                });
-            }).catch(e => alert(e.message));
-        });
-
-        // --- APP LOGIC ---
-        function initApp() {
-            loadChats();
-            handleInviteLink();
-        }
-
-        // 1. Load Chat List
-        function loadChats() {
-            const listEl = document.getElementById('chat-list');
-            const q = query(collection(db, 'chats'), where('participants', 'array-contains', currentUser.uid), orderBy('updatedAt', 'desc'));
+        function App() {
+            const [user, setUser] = useState(null);
+            const [activeChat, setActiveChat] = useState(null);
+            const [chats, setChats] = useState([]);
+            const [messages, setMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState("");
+            const [inviteLink, setInviteLink] = useState("");
             
-            onSnapshot(q, (snapshot) => {
-                listEl.innerHTML = '';
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const div = document.createElement('div');
-                    
-                    // Determine Name
-                    let name = "Chat";
-                    if (data.type === 'group') {
-                        name = data.name;
+            // Login & Initial Setup
+            useEffect(() => {
+                const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+                    if (currentUser) {
+                        setUser(currentUser);
+                        // Save user to DB
+                        await setDoc(doc(db, "users", currentUser.uid), {
+                            uid: currentUser.uid,
+                            name: currentUser.displayName || currentUser.phoneNumber,
+                            photo: currentUser.photoURL,
+                            email: currentUser.email
+                        }, { merge: true });
+
+                        // Check for Invite Link in URL
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const inviteId = urlParams.get('invite');
+                        if (inviteId && inviteId !== currentUser.uid) {
+                            handleInvite(currentUser.uid, inviteId);
+                        }
                     } else {
-                        // Private: find other person's name
-                        const otherId = data.participants.find(id => id !== currentUser.uid);
-                        name = data.participantNames ? data.participantNames[otherId] : "User";
+                        setUser(null);
+                        setChats([]);
+                        setActiveChat(null);
                     }
-
-                    div.className = `chat-item ${currentChatId === docSnap.id ? 'active' : ''}`;
-                    div.innerHTML = `
-                        <div class="avatar">${name.charAt(0).toUpperCase()}</div>
-                        <div class="info">
-                            <h4>${name}</h4>
-                            <p>${data.lastMessage || 'No messages yet'}</p>
-                        </div>
-                    `;
-                    div.onclick = () => openChat(docSnap.id, name, data.type);
-                    listEl.appendChild(div);
                 });
-            });
-        }
+                return () => unsubscribe();
+            }, []);
 
-        // 2. Open Chat
-        window.openChat = function(chatId, title, type) {
-            currentChatId = chatId;
-            
-            // UI
-            document.getElementById('active-chat-title').innerText = title;
-            document.getElementById('active-chat-status').innerText = type === 'group' ? 'Group Chat' : 'Private';
-            
-            // Mobile Slide
-            document.getElementById('chat-view').classList.add('active');
-            
-            // Load Messages
-            if(msgUnsub) msgUnsub();
-            const msgsDiv = document.getElementById('messages');
-            
-            const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
-            msgUnsub = onSnapshot(q, (snap) => {
-                msgsDiv.innerHTML = '';
-                snap.forEach(d => {
-                    const msg = d.data();
-                    const el = document.createElement('div');
-                    const isOwn = msg.senderId === currentUser.uid;
-                    el.className = `msg ${isOwn ? 'own' : 'their'}`;
-                    el.innerHTML = `
-                        ${!isOwn && type === 'group' ? `<span class="msg-sender">${msg.senderName}</span>` : ''}
-                        ${msg.text}
-                    `;
-                    msgsDiv.appendChild(el);
-                });
-                msgsDiv.scrollTop = msgsDiv.scrollHeight;
-            });
-        };
-
-        window.closeChat = function() {
-            document.getElementById('chat-view').classList.remove('active');
-            currentChatId = null;
-        };
-
-        // 3. Send Message
-        const sendBtn = document.getElementById('send-btn');
-        const msgInput = document.getElementById('msg-input');
-
-        async function send() {
-            const text = msgInput.value.trim();
-            if(!text || !currentChatId) return;
-            
-            msgInput.value = '';
-            
-            // Add msg
-            await addDoc(collection(db, 'chats', currentChatId, 'messages'), {
-                text: text,
-                senderId: currentUser.uid,
-                senderName: currentUser.displayName,
-                createdAt: serverTimestamp()
-            });
-
-            // Update chat list preview
-            await updateDoc(doc(db, 'chats', currentChatId), {
-                lastMessage: text,
-                updatedAt: serverTimestamp()
-            });
-        }
-
-        sendBtn.onclick = send;
-        msgInput.onkeypress = (e) => { if(e.key === 'Enter') send() };
-
-        // 4. Group Creation
-        document.getElementById('create-group-btn').onclick = async () => {
-            const name = document.getElementById('group-name-in').value;
-            if(!name) return;
-
-            const ref = await addDoc(collection(db, 'chats'), {
-                type: 'group',
-                name: name,
-                participants: [currentUser.uid],
-                updatedAt: serverTimestamp(),
-                lastMessage: 'Group Created'
-            });
-
-            document.getElementById('group-modal').classList.add('hidden');
-        };
-
-        // 5. Invite Link Logic (URL ?invite=USERID)
-        async function handleInviteLink() {
-            const params = new URLSearchParams(window.location.search);
-            const inviteId = params.get('invite');
-            
-            if(inviteId && inviteId !== currentUser.uid) {
-                // Check if chat exists
-                const sortedIds = [currentUser.uid, inviteId].sort();
-                const chatId = sortedIds.join('_');
-                const chatRef = doc(db, 'chats', chatId);
-                const chatSnap = await getDoc(chatRef);
-
-                if(!chatSnap.exists()) {
-                    // Create new private chat
-                    // Need invitee name
-                    const uSnap = await getDoc(doc(db, 'users', inviteId));
-                    const inviteName = uSnap.exists() ? uSnap.data().name : "User";
-
-                    await setDoc(chatRef, {
-                        type: 'private',
-                        participants: sortedIds,
-                        participantNames: {
-                            [currentUser.uid]: currentUser.displayName,
-                            [inviteId]: inviteName
-                        },
-                        updatedAt: serverTimestamp(),
-                        lastMessage: 'Chat started'
-                    });
-                }
+            // Handle Invites (Create Chat)
+            const handleInvite = async (myUid, friendUid) => {
+                // Check if chat already exists
+                const q = query(collection(db, "chats"), where("participants", "array-contains", myUid));
+                const snapshot = await getDocs(q);
+                let chatExists = false;
                 
-                // Remove param
-                window.history.replaceState({}, document.title, window.location.pathname);
-                // Open it
-       // We re-fetch name just in case
-                const cSnap = await getDoc(chatRef);
-                const otherName = cSnap.data().participantNames[inviteId];
-                openChat(chatId, otherName, 'private');
-            }
-        }
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.participants.includes(friendUid)) {
+                        chatExists = true;
+                        setActiveChat({ id: doc.id, ...data });
+                    }
+                });
 
-        window.copyMyLink = function() {
-            const url = `${window.location.origin}${window.location.pathname}?invite=${currentUser.uid}`;
-            navigator.clipboard.writeText(url).then(() => alert("Link Copied! Send it to a friend."));
-        }
+                if (!chatExists) {
+                    const newChat = await addDoc(collection(db, "chats"), {
+                        participants: [myUid, friendUid],
+                        createdAt: serverTimestamp(),
+                        lastMessage: "Chat started"
+                    });
+                    // Clear URL
+                    window.history.replaceState({}, document.title, "/");
+                    alert("Friend added! You can now chat.");
+                }
+            };
 
+            // Load Chat List
+            useEffect(() => {
+                if (!user) return;
+                const q = query(collection(db, "chats"), where("participants", "array-contains", user.uid), orderBy("createdAt", "desc"));
+                const unsub = onSnapshot(q, (snapshot) => {
+                    const chatList = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        // Helper to find friend's ID
+                        friendId: doc.data().participants.find(id => id !== user.uid)
+                    }));
+                    setChats(chatList);
+                });
+                return () => unsub();
+            }, [user]);
+
+            // Load Messages for Active Chat
+            useEffect(() => {
+                if (!activeChat) return;
+                const q = query(collection(db, "chats", activeChat.id, "messages"), orderBy("createdAt", "asc"));
+                const unsub = onSnapshot(q, (snapshot) => {
+                    setMessages(snapshot.docs.map(doc => doc.data()));
+                });
+                return () => unsub();
+            }, [activeChat]);
+
+            const sendMessage = async (e) => {
+                e.preventDefault();
+                if (!newMessage.trim() || !activeChat) return;
+
+                await addDoc(collection(db, "chats", activeChat.id, "messages"), {
+                    text: newMessage,
+                    senderId: user.uid,
+                    createdAt: serverTimestamp()
+                });
+
+                await updateDoc(doc(db, "chats", activeChat.id), {
+                    lastMessage: newMessage,
+                    lastMessageTime: serverTimestamp()
+                });
+                setNewMessage("");
+            };
+
+            const copyInvite = () => {
+                const link = `${window.location.origin}?invite=${user.uid}`;
+                navigator.clipboard.writeText(link);
+                alert("Invite link copied! Send it to your friend.");
+            };
+
+            const handleGoogleLogin = async () => {
+                try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+                catch (e) { console.error(e); }
+            };
+                        return (
+                <div className="h-screen w-screen flex bg-background text-white overflow-hidden">
+                    
+                    {/* LEFT SIDEBAR (Chat List) */}
+                    <div className={`${activeChat ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col border-r border-white/10 bg-surface/50`}>
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                            <h1 className="font-bold text-xl">PrivChat</h1>
+                            {user && (
+                                <button onClick={() => signOut(auth)} title="Logout">
+                                    <i data-lucide="log-out" class="w-5 h-5 text-red-400"></i>
+                                </button>
+                            )}
+                        </div>
+
+                        {!user ? (
+                            <div className="flex-1 flex flex-col justify-center p-6 gap-4">
+                                <p className="text-center text-white/60 mb-4">Login to view chats</p>
+                                <button onClick={handleGoogleLogin} className="p-3 bg-white/10 rounded-xl flex items-center gap-3 hover:bg-white/20">
+                                    <i data-lucide="log-in" class="w-5 h-5"></i> Google Login
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto">
+                                <button onClick={copyInvite} className="w-full p-4 text-left border-b border-white/5 hover:bg-white/5 flex items-center gap-3 text-primary">
+                                    <div className="bg-primary/20 p-2 rounded-full"><i data-lucide="user-plus" class="w-4 h-4"></i></div>
+                                    <div>
+                                        <p className="font-bold text-sm">Invite Friend</p>
+                                        <p className="text-xs text-white/50">Click to copy link</p>
+                                    </div>
+                                </button>
+
+                                {chats.map(chat => (
+                                    <div key={chat.id} onClick={() => setActiveChat(chat)} 
+                                         className={`p-4 border-b border-white/5 cursor-pointer hover:bg-white/5 ${activeChat?.id === chat.id ? 'bg-white/10' : ''}`}>
+                                        <p className="font-medium text-sm">Friend (ID: {chat.friendId.slice(0,5)}...)</p>
+                                        <p className="text-xs text-white/40 truncate">{chat.lastMessage}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* RIGHT AREA (Chat Room) */}
+                    <div className={`${!activeChat ? 'hidden md:flex' : 'flex'} flex-1 flex-col bg-black/20 relative`}>
+                        {!activeChat ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-white/30">
+                                <i data-lucide="message-square" class="w-16 h-16 mb-4"></i>
+                                <p>Select a chat or invite a friend</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Chat Header */}
+                                <div className="p-4 bg-surface/50 border-b border-white/10 flex items-center gap-3">
+                                    <button onClick={() => setActiveChat(null)} className="md:hidden text-white/60">
+                                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                                    </button>
+                                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-accent"></div>
+                                    <div>
+                                        <p className="font-bold">Chat Room</p>
+                                        <p className="text-xs text-green-400">Encrypted</p>
+                                    </div>
+                                </div>
+
+                                {/* Messages Feed */}
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse">
+                                    <div className="flex flex-col gap-2">
+                                        {messages.map((msg, idx) => (
+                                            <div key={idx} className={`max-w-[75%] p-3 rounded-2xl text-sm ${msg.senderId === user.uid ? 'bg-primary self-end rounded-tr-none' : 'bg-surface self-start rounded-tl-none'}`}>
+                                                {msg.text}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Input Area */}
+                                <form onSubmit={sendMessage} className="p-4 bg-surface/30 border-t border-white/10 flex gap-2">
+                                    <input 
+                                        value={newMessage}
+                                        onChange={e => setNewMessage(e.target.value)}
+                                        placeholder="Type a message..."
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-full px-4 py-2 outline-none focus:border-primary"
+                                    />
+                                    <button type="submit" className="p-3 bg-primary rounded-full hover:bg-primary/80">
+                                        <i data-lucide="send" class="w-5 h-5"></i>
+                                    </button>
+                                </form>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+                    const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        setTimeout(() => lucide.createIcons(), 500); // Small delay to ensure icons load
     </script>
 </body>
 </html>
